@@ -63,6 +63,9 @@ voice_local = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/free_claude_code"]
 
+[tool.vercel]
+entrypoint = "index.py:app"
+
 [tool.uv]
 required-version = ">=0.11.16"
 
