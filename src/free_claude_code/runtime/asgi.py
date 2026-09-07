@@ -1,5 +1,7 @@
 """ASGI lifespan adapter for the application runtime owner."""
 
+import asyncio
+
 from loguru import logger
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -12,6 +14,7 @@ class RuntimeASGIApp:
     def __init__(self, app: ASGIApp, runtime: ApplicationRuntime) -> None:
         self.app = app
         self.runtime = runtime
+        self._start_lock = asyncio.Lock()
 
     def __getattr__(self, name: str) -> object:
         """Expose the wrapped application's public interface transparently."""
@@ -19,6 +22,10 @@ class RuntimeASGIApp:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "lifespan":
+            if not getattr(self.runtime, "_started", False):
+                async with self._start_lock:
+                    if not getattr(self.runtime, "_started", False):
+                        await self.runtime.start()
             await self.app(scope, receive, send)
             return
         await self._lifespan(receive, send)
