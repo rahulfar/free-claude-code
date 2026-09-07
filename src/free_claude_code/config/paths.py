@@ -1,5 +1,6 @@
 """Shared filesystem paths for Free Claude Code configuration."""
 
+import os
 from pathlib import Path
 
 FCC_CONFIG_DIRNAME = ".fcc"
@@ -23,8 +24,14 @@ CHAT_LOCK_FILENAME = "chat.lock"
 
 def config_dir_path() -> Path:
     """Return the default user config directory."""
-
-    return Path.home() / FCC_CONFIG_DIRNAME
+    if override := os.getenv("FCC_CONFIG_DIR"):
+        return Path(override)
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return Path("/tmp") / FCC_CONFIG_DIRNAME
+    try:
+        return Path.home() / FCC_CONFIG_DIRNAME
+    except Exception:
+        return Path("/tmp") / FCC_CONFIG_DIRNAME
 
 
 def managed_env_path() -> Path:
